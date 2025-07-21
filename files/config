@@ -1,0 +1,8 @@
+{
+  "oci_profile": "DEFAULT",
+  "compartment_id": "<YOUR COMPARTMENT OCID>",
+  "namespace": "<YOUR NAMESPACE OCID>",
+  "input_bucket": "<YOUR INVOICES IMAGES BUCKET NAME>",
+  "output_bucket": "<YOUR OUTPUT JSON FILES BUCKET NAME>",
+  "llm_endpoint": "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+}
