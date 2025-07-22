@@ -1,6 +1,6 @@
-# 📄 Automatic Invoice Processing with OCI Vision and OCI Generative AI
+# Automate Invoice Images with Oracle Cloud Vision and Generative AI
 
-## 🧠 Introduction
+## Introduction
 
 Companies often receive thousands of invoices in unstructured formats—scanned images or PDFs—originating from suppliers and service providers. Manually extracting data from these invoices, such as invoice number, customer name, items purchased, and total amount, is a time-consuming and error-prone process.
 
@@ -10,7 +10,7 @@ This tutorial demonstrates how to implement an automated pipeline that monitors 
 
 ---
 
-## 🚀 Use Cases
+## Objectives
 
 - Automating invoice ingestion from Object Storage.
 - Extracting structured data from semi-structured scanned documents.
@@ -18,7 +18,7 @@ This tutorial demonstrates how to implement an automated pipeline that monitors 
 
 ---
 
-## 🧱 Oracle Cloud Services Used
+## Oracle Cloud Services Used
 
 | Service                     | Purpose                                                                 |
 |----------------------------|-------------------------------------------------------------------------|
@@ -28,7 +28,7 @@ This tutorial demonstrates how to implement an automated pipeline that monitors 
 
 ---
 
-## ⚙️ Prerequisites
+## Prerequisites
 
 1. An OCI account with access to:
     - Vision AI
@@ -39,7 +39,7 @@ This tutorial demonstrates how to implement an automated pipeline that monitors 
 
 ---
 
-## 🛠️ How to Run
+## Task 1: Configure Python Packages
 
 1. Execute the [requirements.txt](./files/requirements.txt) with:
 
@@ -52,9 +52,9 @@ This tutorial demonstrates how to implement an automated pipeline that monitors 
 
 ---
 
-## 🧩 Understand the code
+## Task 2: Understand the code
 
-### 1. Load Configuration
+### Load Configuration
 
 ```python
 with open("./config", "r") as f:
@@ -78,7 +78,7 @@ Fill the [config](./files/config) with you configuration parameters:
 
 ---
 
-### 2. Initialize OCI Clients
+### Initialize OCI Clients
 
 ```python
 oci_config = oci.config.from_file("~/.oci/config", PROFILE)
@@ -90,7 +90,7 @@ ai_vision_client = oci.ai_vision.AIServiceVisionClient(oci_config)
 
 ---
 
-### 3. Initialize LLM
+### Initialize LLM
 
 ```python
 llm = ChatOCIGenAI(
@@ -106,7 +106,7 @@ llm = ChatOCIGenAI(
 
 ---
 
-### 4. Few-shot Prompt
+### Few-shot Prompt
 
 ```python
 few_shot_examples = [ ... ]
@@ -120,7 +120,7 @@ You are a fiscal data extractor.
 
 ---
 
-### 5. OCR with OCI Vision
+### OCR with OCI Vision
 
 ```python
 def perform_ocr(file_name):
@@ -153,7 +153,7 @@ def perform_ocr(file_name):
 
 ---
 
-### 6. Data Extraction with LLM
+### Data Extraction with LLM
 
 ```python
 def extract_data_with_llm(ocr_result, file_name):
@@ -198,7 +198,7 @@ def extract_data_with_llm(ocr_result, file_name):
 
 ---
 
-### 7. Save Output to Object Storage
+### Save Output to Object Storage
 
 ```python
 def save_output(result, file_name):
@@ -209,7 +209,7 @@ def save_output(result, file_name):
 
 ---
 
-### 8. Main Loop: Monitor and Process
+### Main Loop: Monitor and Process
 
 ```python
 def monitor_bucket():
@@ -224,7 +224,7 @@ def monitor_bucket():
 
 ---
 
-### 9. Entry Point
+### Entry Point
 
 ```python
 if __name__ == "__main__":
@@ -235,7 +235,7 @@ if __name__ == "__main__":
 
 ---
 
-## 🧪 Execute the code
+## Task 3: Execute the code
 
 Execute the code:
 
@@ -243,7 +243,7 @@ Execute the code:
 
 ---
 
-## 🧪 Testing Suggestions
+## Task 4: Test Suggestions
 
 - Use real or dummy invoices with legible product lines and customer name. Try this [Invoice Multi-Items](./files/Invoice%20Multi-items.png)
 - Upload multiple images at the input-bucket in sequence to see automated processing.
@@ -255,12 +255,12 @@ Execute the code:
 
 ---
 
-## ✅ Expected Output
+## Task 5: View expected output
 
 For each uploaded invoice image:
 - Look at the output-bucket file processed. A corresponding `.json` file is generated with structured content like:
 
-![img.png](img.png)
+![img.png](images/img.png)
 
 ---
 
