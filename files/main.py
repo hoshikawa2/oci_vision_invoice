@@ -47,7 +47,7 @@ few_shot_examples = [
         "EMITENTE": "Comercial ABC Ltda - Rua A, 123 - Belo Horizonte - MG"
         "NF": "NF102030"
         "DESTINATÁRIO": "Distribuidora XYZ - São Paulo - SP"
-        "DESCRIÇÃO DO PRODUTO": 
+        "DADOS DOS PRODUTOS / SERVIÇOS": 
             "Cabo HDMI 2.0 2m, preto" | PRICE: 39.90 
             "Teclado Mecânico RGB ABNT2" | PRICE: 199.99 
             "Mouse Gamer 3200DPI" | PRICE: 89.50 
@@ -71,9 +71,20 @@ You are a fiscal data extractor.
 
 Your goal is to:
 - Extract the invoice number (field 'nf')
-- Extract the customer name (field 'customer')
-- Extract the state (field 'location') — ⚠️ use **only** the state of the EMITTER company, based on its name and address.
-- Extract the list of products and prices (field 'items')
+- Extract the customer name (field 'Nome / Razao Social')
+- Extract the state (field 'UF') — ⚠️ use **only** the state of the EMITTER company, based on its name and address.
+- Extract the list of products and prices (fields: 'Descricao do Produto / Servico' and 'Valor Unitario')
+- Return a JSON structure as a response in a unique line:
+        {
+          "nf": "NF102030",
+          "customer": "Comercial ABC Ltda",
+          "location": "MG",
+          "items": [
+            {"description": "Cabo HDMI 2.0 2m, preto", "price": 39.90},
+            {"description": "Teclado Mecânico RGB ABNT2", "price": 199.99},
+            {"description": "Mouse Gamer 3200DPI", "price": 89.50}
+          ]
+        }
 """
 
 # ====================
@@ -103,15 +114,35 @@ def perform_ocr(file_name):
 
     return response.data
 
-def extract_data_with_llm(ocr_text, file_name):
-    prompt = instruction + "\n" + "\n".join(few_shot_examples) + f"\nInvoice text:\n{ocr_text}\nExtracted fields (JSON format):"
+def extract_data_with_llm(ocr_result, file_name):
+    # 🔍 Extrai texto OCR (usando a estrutura da resposta do OCI Vision)
+    extracted_lines = []
+    for page in getattr(ocr_result, 'pages', []):
+        for line in getattr(page, 'lines', []):
+            extracted_lines.append(line.text.strip())
+
+    plain_text = "\n".join(extracted_lines)
+
+    # 🧠 Monta o prompt com instrução, few-shot e texto OCR limpo
+    prompt = instruction + "\n" + "\n".join(few_shot_examples) + f"\nInvoice text:\n{plain_text}\nExtracted fields (JSON format):"
+
+    # 🔗 Chamada ao LLM
     response = llm([HumanMessage(content=prompt)])
 
-    print(response.content)
+    # 🧪 Tenta extrair JSON puro da resposta
+    try:
+        content = response.content.strip()
+        first_brace = content.find("{")
+        last_brace = content.rfind("}")
+        json_string = content[first_brace:last_brace + 1]
+        parsed_json = json.loads(json_string)
+    except Exception as e:
+        print(f"⚠️ Erro ao extrair JSON da resposta do LLM: {e}")
+        parsed_json = {"raw_response": response.content}
 
     return {
         "file": file_name,
-        "result": response.content,
+        "result": parsed_json,
         "timestamp": datetime.utcnow().isoformat()
     }
 

@@ -1,6 +1,10 @@
 # 📄 Automatic Invoice Processing with OCI Vision and OCI Generative AI
 
-## 🧠 Objective
+## 🧠 Introduction
+
+Companies often receive thousands of invoices in unstructured formats—scanned images or PDFs—originating from suppliers and service providers. Manually extracting data from these invoices, such as invoice number, customer name, items purchased, and total amount, is a time-consuming and error-prone process.
+
+These delays in processing not only affect accounts payable cycles and cash flow visibility but also introduce bottlenecks in compliance, auditing, and reporting.
 
 This tutorial demonstrates how to implement an automated pipeline that monitors a bucket in Oracle Cloud Infrastructure (OCI) for incoming invoice images, extracts textual content using **OCI Vision**, and then applies **OCI Generative AI** (LLM) to extract structured fiscal data like invoice number, customer, and item list.
 
@@ -32,17 +36,6 @@ This tutorial demonstrates how to implement an automated pipeline that monitors 
     - Object Storage
 2. A Python 3.10 at least
 3. A bucket for input images (e.g., `input-bucket`) and another for output files (e.g., `output-bucket`).
-4. A [config](./files/config) with:
-   ```json
-   {
-     "oci_profile": "DEFAULT",
-     "namespace": "your_namespace",
-     "input_bucket": "input-bucket",
-     "output_bucket": "output-bucket",
-     "compartment_id": "ocid1.compartment.oc1..xxxx",
-     "llm_endpoint": "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
-   }
-   ```
 
 ---
 
@@ -59,7 +52,7 @@ This tutorial demonstrates how to implement an automated pipeline that monitors 
 
 ---
 
-## 🧩 Code Walkthrough
+## 🧩 Understand the code
 
 ### 1. Load Configuration
 
@@ -69,6 +62,19 @@ with open("./config", "r") as f:
 ```
 
 > Loads all required configuration values such as namespace, bucket names, compartment ID, and LLM endpoint.
+
+Fill the [config](./files/config) with you configuration parameters:
+   ```json
+   {
+     "oci_profile": "DEFAULT",
+     "namespace": "your_namespace",
+     "input_bucket": "input-bucket",
+     "output_bucket": "output-bucket",
+     "compartment_id": "ocid1.compartment.oc1..xxxx",
+     "llm_endpoint": "https://inference.generativeai.us-chicago-1.oci.oraclecloud.com"
+   }
+   ```
+
 
 ---
 
@@ -80,7 +86,7 @@ object_storage = oci.object_storage.ObjectStorageClient(oci_config)
 ai_vision_client = oci.ai_vision.AIServiceVisionClient(oci_config)
 ```
 
-> Sets up the OCI SDK clients to access Object Storage and AI Vision services.
+> Sets up the OCI SDK clients to access Object Storage and AI Vision services. See [OCI Vision Documentation](https://docs.oracle.com/en-us/iaas/tools/python/2.156.0/api/ai_vision/client/oci.ai_vision.AIServiceVisionClient.html)
 
 ---
 
@@ -118,8 +124,27 @@ You are a fiscal data extractor.
 
 ```python
 def perform_ocr(file_name):
-    ...
-```
+   print(f"📄 Performing OCR on: {file_name}")
+
+   response = ai_vision_client.analyze_document(
+      analyze_document_details=oci.ai_vision.models.AnalyzeDocumentDetails(
+         features=[
+            oci.ai_vision.models.DocumentTableDetectionFeature(
+               feature_type="TEXT_DETECTION")],
+         document=oci.ai_vision.models.ObjectStorageDocumentDetails(
+            source="OBJECT_STORAGE",
+            namespace_name=NAMESPACE,
+            bucket_name=INPUT_BUCKET,
+            object_name=file_name),
+         compartment_id=COMPARTMENT_ID,
+         language="POR",
+         document_type="INVOICE")
+   )
+
+   print(response.data)
+
+   return response.data
+   ```
 
 > This function:
 > - Sends the image to OCI Vision.
@@ -131,14 +156,45 @@ def perform_ocr(file_name):
 ### 6. Data Extraction with LLM
 
 ```python
-def extract_data_with_llm(ocr_text, file_name):
-    ...
+def extract_data_with_llm(ocr_result, file_name):
+    # 🔍 Extrai texto OCR (usando a estrutura da resposta do OCI Vision)
+    extracted_lines = []
+    for page in getattr(ocr_result, 'pages', []):
+        for line in getattr(page, 'lines', []):
+            extracted_lines.append(line.text.strip())
+
+    plain_text = "\n".join(extracted_lines)
+
+    # 🧠 Monta o prompt com instrução, few-shot e texto OCR limpo
+    prompt = instruction + "\n" + "\n".join(few_shot_examples) + f"\nInvoice text:\n{plain_text}\nExtracted fields (JSON format):"
+
+    # 🔗 Chamada ao LLM
+    response = llm([HumanMessage(content=prompt)])
+
+    # 🧪 Tenta extrair JSON puro da resposta
+    try:
+        content = response.content.strip()
+        first_brace = content.find("{")
+        last_brace = content.rfind("}")
+        json_string = content[first_brace:last_brace + 1]
+        parsed_json = json.loads(json_string)
+    except Exception as e:
+        print(f"⚠️ Erro ao extrair JSON da resposta do LLM: {e}")
+        parsed_json = {"raw_response": response.content}
+
+    return {
+        "file": file_name,
+        "result": parsed_json,
+        "timestamp": datetime.utcnow().isoformat()
+    }
 ```
 
 > This function:
 > - Combines instructions + few-shot example + OCR text.
+> - Prepare the OCR data returned by OCI Vision.
 > - Sends it to OCI Generative AI.
 > - Receives structured JSON fields (as string).
+> - OCI Vision supports Portuguese OCR (`language="POR"` can be used instead of `"ENG"`).
 
 ---
 
@@ -179,26 +235,32 @@ if __name__ == "__main__":
 
 ---
 
-## ✅ Expected Output
+## 🧪 Execute the code
 
-For each uploaded invoice image:
-- A corresponding `.json` file is generated with structured content like:
+Execute the code:
 
-```json
-{
-  "file": "nota123.png",
-  "result": "{ "nf": "NF102030", "customer": "Comercial ABC Ltda", ... }",
-  "timestamp": "2025-07-21T12:34:56.789Z"
-}
-```
+    python main.py
 
 ---
 
 ## 🧪 Testing Suggestions
 
-- Use real or dummy invoices with legible product lines and emitente.
-- Upload multiple images in sequence to see automated processing.
+- Use real or dummy invoices with legible product lines and customer name. Try this [Invoice Multi-Items](./files/Invoice%20Multi-items.png)
+- Upload multiple images at the input-bucket in sequence to see automated processing.
 - Log into OCI Console > Object Storage to verify results in both buckets.
+
+>**Note:** In this tutorial, the sample used is a Brazilian Invoice to illustrate the complexity of the attributes and disposition and how the prompt were created to resolve this case.
+
+![Invoice](./files/Invoice%20Multi-items.png)
+
+---
+
+## ✅ Expected Output
+
+For each uploaded invoice image:
+- Look at the output-bucket file processed. A corresponding `.json` file is generated with structured content like:
+
+![img.png](img.png)
 
 ---
 
@@ -212,8 +274,8 @@ For each uploaded invoice image:
 
 ## 📚 References
 
-- [OCI Vision Documentation](https://docs.oracle.com/en-us/iaas/vision/)
-- [OCI Generative AI Documentation](https://docs.oracle.com/en-us/iaas/generative-ai/)
+- [OCI Vision Documentation](https://docs.oracle.com/en-us/iaas/tools/python/2.156.0/api/ai_vision/client/oci.ai_vision.AIServiceVisionClient.html)
+- [OCI Generative AI Documentation](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm/)
 - [LangChain OCI Integration](https://python.langchain.com/docs/integrations/chat/oci_gen_ai/)
 
 ## Acknowledgments
