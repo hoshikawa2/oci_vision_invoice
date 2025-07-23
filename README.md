@@ -251,7 +251,7 @@ Execute the code:
 
 >**Note:** In this tutorial, the sample used is a Brazilian Invoice to illustrate the complexity of the attributes and disposition and how the prompt were created to resolve this case.
 
-![Invoice](./files/Invoice%20Multi-items.png)
+![Invoice](./images/Invoice%20Multi-items.png)
 
 ---
 
