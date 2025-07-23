@@ -71,8 +71,8 @@ You are a fiscal data extractor.
 
 Your goal is to:
 - Extract the invoice number (field 'nf')
-- Extract the customer name (field 'Nome / Razao Social')
-- Extract the state (field 'UF') — ⚠️ use **only** the state of the EMITTER company, based on its name and address.
+- Extract the customer name (field 'Nome / Razao Social') localized on EMITENTE
+- Extract the state (field 'UF') — ⚠️ use **only** the state of the EMITENTE company, based on its name and address.
 - Extract the list of products and prices (fields: 'Descricao do Produto / Servico' and 'Valor Unitario')
 - Return a JSON structure as a response in a unique line:
         {
