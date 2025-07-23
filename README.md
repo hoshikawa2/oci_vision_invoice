@@ -269,7 +269,7 @@ For each uploaded invoice image:
 - OCI Vision supports Portuguese OCR (`language="POR"` can be used instead of `"ENG"`).
 - LLM prompt can be adjusted to extract other fields like `CNPJ`, `quantidade`, `data de emissão`, etc.
 - Consider persisting `processed_files` with a database or file to make the process fault-tolerant.
-- This is part of the Use Case: [Build an AI Agent with Multi-Agent Communication Protocol Server for Invoice Resolution](https://docs.oracle.com/en/learn/oci-aiagent-mcp-server/) as a pre-processed Invoice Image. The invoice is a Devolution invoice came from the Company Customer. The fields customer and location are captured from the Invoice creator.
+- This process can be used with the Use Case: [Build an AI Agent with Multi-Agent Communication Protocol Server for Invoice Resolution](https://docs.oracle.com/en/learn/oci-aiagent-mcp-server/) as a pre-processed Invoice Image. The invoice is a Devolution invoice came from the Company Customer. The fields customer and location are captured from the Invoice creator.
 
 ---
 
@@ -278,6 +278,7 @@ For each uploaded invoice image:
 - [OCI Vision Documentation](https://docs.oracle.com/en-us/iaas/tools/python/2.156.0/api/ai_vision/client/oci.ai_vision.AIServiceVisionClient.html)
 - [OCI Generative AI Documentation](https://docs.oracle.com/en-us/iaas/Content/generative-ai/home.htm/)
 - [LangChain OCI Integration](https://python.langchain.com/docs/integrations/chat/oci_gen_ai/)
+- [Build an AI Agent with Multi-Agent Communication Protocol Server for Invoice Resolution](https://docs.oracle.com/en/learn/oci-aiagent-mcp-server/)
 
 ## Acknowledgments
 
