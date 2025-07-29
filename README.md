@@ -245,7 +245,7 @@ Execute the code:
 
 ## Task 4: Test Suggestions
 
-- Use real or dummy invoices with legible product lines and customer name. Try this [Invoice Multi-Items](./files/Invoice%20Multi-items.png)
+- Use real or dummy invoices with legible product lines and customer name. Try this [Invoice Multi-Items](./images/Invoice%20Multi-items.png)
 - Upload multiple images at the input-bucket in sequence to see automated processing.
 - Log into OCI Console > Object Storage to verify results in both buckets.
 
